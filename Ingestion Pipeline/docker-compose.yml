@@ -1,0 +1,17 @@
+version: '3.8'
+name: ingestion_pipeline
+services:
+  postgres:
+    container_name: ingestion_pipeline
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

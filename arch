@@ -1,0 +1,30 @@
+                              [ User / Client Requests ]
+                                            │ (gRPC / REST)
+                                            ▼
+                             ┌──────────────────────────────┐
+                             │    API Gateway (Spring Cloud)│ ──► [OAuth2/OIDC] (Tenant Auth)
+                             └──────────────────────────────┘
+                                            │
+               ┌────────────────────────────┴────────────────────────────┐
+               ▼                                                         ▼
+┌──────────────────────────────┐                          ┌──────────────────────────────┐
+│     AI Agent Edge Service    │                          │     Ingestion Pipeline       │
+│  (LangChain4j / Quarkus Native)                         │    (Document Processor)      │
+└──────────────────────────────┘                          └──────────────────────────────┘
+   │               │           ▲                             │               │
+   │ (JDBC)        │(Pub/Sub)  │(State sync)                 │ (Batch)       │ (Vector Write)
+   ▼               ▼           │                             ▼               ▼
+┌──────────┐   ┌───────────┐ ┌───────────┐                ┌──────────┐   ┌───────────┐
+│ DB (Post─│   │   Kafka   │ │   Redis   │                │ DB (Post─│   │  Milvus   │
+│ ggreSQL) │   │  Cluster  │ │ (Cluster) │                │ ggreSQL) │   │ (Cluster) │
+└──────────┘   └───────────┘ └───────────┘                └──────────┘   └───────────┘
+   │ (Outbox)      ▲                                         │               ▲
+   └───────────────┘                                         └───────────────┘
+           │
+           ▼
+┌──────────────────────────────┐
+│      LLM Gateway Service     │ (Resilience4j Circuit Breaker / Rate Limiter)
+└──────────────────────────────┘
+   │               │               │
+   ▼               ▼               ▼
+[OpenAI API]    [vLLM / K8s]   [Ollama / Dev]
