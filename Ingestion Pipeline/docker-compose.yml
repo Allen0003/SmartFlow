@@ -1,5 +1,5 @@
 version: '3.8'
-name: ingestion_pipeline
+name: pipeline_postgresql
 services:
   postgres:
     container_name: ingestion_pipeline
