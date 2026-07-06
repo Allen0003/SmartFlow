@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS child_vectors (
     parent_id VARCHAR(36) NOT NULL REFERENCES parent_documents(id) ON DELETE CASCADE,
     tenant_id VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
-    embedding VECTOR(1536),
+    embedding VECTOR(768),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
