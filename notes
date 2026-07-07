@@ -1,0 +1,78 @@
+你現在是一位專精於「企業級 AI 落地架構」與「MLOps / LLMOps」的資深架構師。我是擁有 10 年經驗的 Java Backend Technical Lead，目前已取得 AWS-SAA 與 CKAD (Kubernetes) 認證，熟悉分散式系統（Kafka、Outbox Pattern）與金融級高安全/高可用性架構。
+
+我想使用 Java 的 LangChain4j 框架，搭配我現有的後端與 K8s 實力，打造一個能拿去面試一線科技巨頭（如 ASML、NVIDIA）或頂尖金控「年薪 200萬+ 現代化 AI 架構師」職缺的頂級端到端（End-to-End）專案。
+
+這個專案的核心主題是：【高併發企業級多模態 AI 智能代理與知識檢索平台 (Enterprise AI Agent & RAG Platform)】。
+
+請針對這個專案，幫我規劃一個硬核、不流於玩具專案的深度學習藍圖，並區分為以下四個核心模塊。在接下來的對話中，我們將一塊一塊深入探討與實作：
+
+### 1. 進階企業級 RAG 架構 (Advanced RAG Pipeline)
+*   不要簡單的文本切片。我們要探討：混合檢索 (Hybrid Search: Keywords + Vector)、重排模型 (Reranking)、多向量檢索 (Multi-Vector Retriever)。
+*   大文件處理：如何優化父子文檔關係 (Parent-Child Documents) 與 Metadata 標籤設計。
+*   向量資料庫的企業級應用：在 pgvector 或 Milvus 中，如何設計高併發下的 Indexing 策略與動態租戶隔離 (Multi-Tenancy)。
+
+### 2. 異步事件驅動與分散式 AI Agent
+*   如何將 LangChain4j 的 AI Agent (Tool Calling) 結合 Kafka 訊息佇列？例如：Agent 收到任務後發送異步事件，利用 Outbox Pattern 確保資料庫狀態與 AI 執行狀態的「最終一致性」。
+*   記憶體管理：在微服務多實例 (Multiple Instances) 架構下，如何用 Redis 實現分散式 Agent Session/Memory 管理，確保用戶換節點連線時 AI 記憶不遺失。
+
+### 3. K8s (CKAD) 雲端原生部署與 LLMOps 彈性擴展
+*   如何將 Java / LangChain4j 應用封裝成最優化的 Docker 映像檔（如 GraalVM Native Image 降低啟動與記憶體開銷）。
+*   在 K8s 叢集中，如何配置 HPA (Horizontal Pod Autoscaler)，根據 AI 推理的 API 延遲或併發量進行自動彈性擴展。
+*   與外部模型（如 OpenAI、Ollama、Local VLLM）對接時，如何在 K8s 中設計負載平衡與熔斷機制 (Circuit Breaker / Resilience4j)，防止 AI 服務被拖垮。
+
+### 4. 企業資安、審計與控管 (Governance & Security)
+*   如何實作 Prompt 注入防禦 (Prompt Injection Defense) 與敏感資料遮蔽 (Data Masking/PII)，確保高機密資料（如金融數據、半導體機台技術參數）不外洩。
+*   AI 決策軌跡審計：如何記錄 Agent 完整的思考鏈 (Chain of Thought)、使用的 Tools 與 Tokens 消耗量，並做成可視化日誌。
+
+---
+
+接下來，請先為我整體概述這個系統的【架構設計圖（包含 Java 微服務、Kafka、Milvus、K8s 與 LLM Gateway 的串接關係）】，並告訴我為了完成這個專案，我的技術棧還需要補上哪些細節。我們就從這裡開始！
+
+
+
+
+need to learn
+
+
+1. 執行與研發框架
+
+    現有優勢：Java Backend 經驗、Spring Boot / Microservices。
+
+    進階補強：
+
+        LangChain4j 深度集成：精通其 AiServices 聲明式介面、Tool 機制，以及如何自定義 ChatMemoryStore 以對接 Redis。
+
+        Quarkus 或 Spring Native：因為我們要部署在 K8s 上，傳統 JVM 的 C1/C2 編譯和幾百 MB 的 Metaspace 啟動太重。你需要掌握利用 GraalVM 將 LangChain4j 應用編譯為 Native Image，讓 Pod 啟動時間降到毫秒級，記憶體佔用小於 50MB。
+
+2. 向量檢索與數據治理
+
+    現有優勢：關係型資料庫、基本 SQL 優化。
+
+    進階補強：
+
+        Milvus / pgvector 的 Index 策略：理解 HNSW (Hierarchical Navigable Small World) 與 IVF_FLAT 的權衡（精準度 vs 檢索速度）。
+
+        動態租戶隔離 (Multi-Tenancy)：掌握 Milvus 的 Partition Key 或帶有 Expression Filter 的標籤過濾，確保 A 公司的 Agent 絕對檢索不到 B 公司的機密。
+
+        Reranking 模型：了解如何引入 BGE-Reranker 等模型，在 Java 端調用或透過 Local API 進行二次打分，解決向量相似度不等於語義相關性的痛點。
+
+3. 雲原生與 LLMOps 觀測性
+
+    現有優勢：CKAD、HPA 基礎、Kubectl。
+
+    進階補強：
+
+        基於自定義指標 (Custom Metrics) 的 HPA：AI 應用的瓶頸通常不是 CPU，而是 LLM API 的併發等待數或 Token 吞吐量。你需要補強 Prometheus Adapter，實現基於 HTTP Queue Depth 或 gRPC 延遲的 HPA 彈性擴展。
+
+        Resilience4j + RateLimiter：針對 LLM Provider 的 429 Too Many Requests 與 503 Service Unavailable，設計精準的退避重試 (Exponential Backoff) 與斷路器。
+
+
+
+利用 LangChain4j 與 Kafka 建立一套工業級的 Ingestion Pipeline。
+
+
+
+模塊 1：進階企業級 RAG 架構 (Advanced RAG Pipeline)
+
+第一個單元測試已經完成 還沒有寫筆記
+
