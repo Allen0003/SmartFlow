@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.List;
+import java.util.UUID;
+
 
 @SpringBootTest(classes = com.enterprise.RagApplication.class)
 public class TenantRerankRetrieverTest {
@@ -19,6 +22,12 @@ public class TenantRerankRetrieverTest {
 
     @Value("${google.gemini.api-key}")
     private String geminiApiKey;
+
+    @Value("${google.gemini.ai-model}")
+    private String aiModel;
+
+    @Value("${google.gemini.ai-dim}")
+    private int aiDim;
 
     @Test
     public void testHybridSearchWithGoogleGemini() {
@@ -33,25 +42,30 @@ public class TenantRerankRetrieverTest {
         // 為了方便測試，這裡直接抓取環境變數，或是你也可以手動填入你的 Gemini Key String
         EmbeddingModel model = GoogleAiEmbeddingModel.builder()
                 .apiKey(geminiApiKey)
-                .modelName("gemini-embedding-001")
+                .modelName(aiModel)
+                .outputDimensionality(aiDim)
                 .build();
 
         String childText = "15 days of annual paid leave for software engineers";
-//        float[] fakeVector = model.embed(childText).content().vector();
-//
-//        // 插入子向量表
-//        jdbcTemplate.update(
-//                "INSERT INTO child_vectors(parent_id, tenant_id, content, embedding) VALUES (1, 'tenant-a', ?, ?::vector)",
-//                childText, fakeVector
-//        );
-//
-//        // ---- 2. 測試混合檢索 ----
-//        System.out.println("====== [開始測試 Google 向量混合檢索] ======");
-//
-//        // 模擬用戶發問
-//        String userQuery = "How many days of paid vacation do developers get?";
-//
-//        // 呼叫你的核心 RRF 檢索方法（尋找租戶 tenant-a 的資料）
+        float[] fakeVector = model.embed(childText).content().vector();
+
+        String childId = UUID.randomUUID().toString();
+
+        // 插入子向量表
+        jdbcTemplate.update(
+                "INSERT INTO child_vectors(id, parent_id, tenant_id, content, embedding) " +
+                        "VALUES (?, '1', 'tenant-a', ?, ?::vector) " +
+                        "ON CONFLICT (id) DO NOTHING",
+                childId, childText, fakeVector
+        );
+
+        // ---- 2. 測試混合檢索 ----
+        System.out.println("====== [開始測試 Google 向量混合檢索] ======");
+
+        // 模擬用戶發問
+        String userQuery = "How many days of paid vacation do developers get?";
+
+        // 呼叫你的核心 RRF 檢索方法（尋找租戶 tenant-a 的資料）
 //        List<String> results = retriever.retrieveParentContent("tenant-a", userQuery, 3);
 //
 //        System.out.println("檢索到的結果數量: " + results.size());
