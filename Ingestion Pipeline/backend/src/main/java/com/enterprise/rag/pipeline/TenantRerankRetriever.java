@@ -16,10 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class TenantRerankRetriever {
 
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
     @Value("${google.gemini.api-key}")
     private String geminiApiKey;
@@ -31,6 +30,10 @@ public class TenantRerankRetriever {
     private int aiDim;
 
     private EmbeddingModel embeddingModel;
+
+    public TenantRerankRetriever(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     @PostConstruct
     public void init() {
