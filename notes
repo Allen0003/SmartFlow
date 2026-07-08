@@ -72,7 +72,48 @@ need to learn
 
 
 
+Parent-Child Chunking（父子區塊檢索策略），高階 RAG 的必備架構
+
+parent_documents (父表)：存放完整、超大段、格式漂亮的原文章節（一整頁、或一整篇長文）。
+
+child_vectors (子表)：把父表的長文拆成 5 句話、10 句話一組的小碎片（Chunks），並把它們轉成向量。
+
+ex:
+
+[parent_documents 表 (ID: 1)]
+ 📄 完整上下文 (大長文)："本公司針對所有正職員工提供以下福利... (中略) ...針對軟體工程師，我們提供 15 天的帶薪年假... (下略) ..."
+       ▲
+       │ (外鍵切片關聯 parent_id = 1)
+ ┌─────┴──────────────────────────────────┐
+ │ [child_vectors 表]                    │
+ │ 📌 碎片 A: "本公司提供以下福利..." -> [Vector A]
+ │ 📌 碎片 B: "軟體工程師有 15 天年假..." -> [Vector B] 🎯 命中！
+
+
+
+
 模塊 1：進階企業級 RAG 架構 (Advanced RAG Pipeline)
 
-第一個單元測試已經完成 還沒有寫筆記
+第一個單元測試已經完成
+
+用 text 建立 vector 資料庫 鎖在 tenant-a 下面
+
+Query 也 轉成向量 然後用 RRF（Reciprocal Rank Fusion）演算法重排序 它把「語意撈出來的排名」跟「關鍵字撈出來的排名」加權融合
+
+用 tenant-a 撈有東西 tenant-b 沒有東西
+
+
+Ingestion Pipeline batch 部分還沒寫
+
+
+1. 寫一個 IngestionService，接收一個大長文（Parent）。
+
+2. 在 Java 裡面用簡單的迴圈或規則（例如每 200 字切一整段）把大長文切碎成好幾個 childText。
+
+3. 用 EmbeddingModel 批次把這些碎片的向量生出來。
+
+4. 最後用你的 JDBC 程式碼，把 Parent 與所有的 Children 一口氣存進資料庫。
+
+
+
 
