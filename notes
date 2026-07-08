@@ -115,5 +115,13 @@ Ingestion Pipeline batch 部分還沒寫
 4. 最後用你的 JDBC 程式碼，把 Parent 與所有的 Children 一口氣存進資料庫。
 
 
+@Autowired vs 建構子
+
+@Autowired spring 幫你用
+建構子 就是 建構子 可以用 final 跟 不啟動 spring 就進行測試 這樣嗎
+
+
+
+
 
 
