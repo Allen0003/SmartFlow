@@ -2,12 +2,9 @@ package com.enterprise.rag.pipeline;
 
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,31 +15,12 @@ import java.util.List;
 @Service
 public class TenantRerankRetriever {
 
-    private final DataSource dataSource;
+    @Autowired
+    private DataSource dataSource;
 
-    @Value("${google.gemini.api-key}")
-    private String geminiApiKey;
-
-    @Value("${google.gemini.ai-model}")
-    private String aiModel;
-
-    @Value("${google.gemini.ai-dim}")
-    private int aiDim;
-
+    @Autowired
     private EmbeddingModel embeddingModel;
 
-    public TenantRerankRetriever(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    @PostConstruct
-    public void init() {
-        this.embeddingModel = GoogleAiEmbeddingModel.builder()
-                .apiKey(geminiApiKey)
-                .modelName(aiModel)
-                .outputDimensionality(aiDim)
-                .build();
-    }
 
     /**
      * 核心檢索方法：結合向量檢索與全文檢索 (Hybrid Search)，並嚴格限制租戶
@@ -55,29 +33,29 @@ public class TenantRerankRetriever {
         // 2. 執行 SQL 級別的混合檢索 (Hybrid Search)
         // 使用 RRF (Reciprocal Rank Fusion) 演算法思想，在 SQL 內將全文檢索評分與向量距離混合排序
         String hybridSql = """
-            WITH vector_search AS (
-                SELECT parent_id, 
-                       ROW_NUMBER() OVER (ORDER BY embedding <=> ?::vector) as rank
-                FROM child_vectors
-                WHERE tenant_id = ?
-                LIMIT 20
-            ),
-            keyword_search AS (
-                SELECT parent_id,
-                       ROW_NUMBER() OVER (ORDER BY ts_rank_cd(to_tsvector('english', content), plainto_tsquery('english', ?)) DESC) as rank
-                FROM child_vectors
-                WHERE tenant_id = ? AND to_tsvector('english', content) @@ plainto_tsquery('english', ?)
-                LIMIT 20
-            )
-            SELECT p.content,
-                   COALESCE(1.0 / (60 + v.rank), 0.0) + COALESCE(1.0 / (60 + k.rank), 0.0) as rrf_score
-            FROM parent_documents p
-            LEFT JOIN vector_search v ON p.id = v.parent_id
-            LEFT JOIN keyword_search k ON p.id = k.parent_id
-            WHERE p.tenant_id = ? AND (v.parent_id IS NOT NULL OR k.parent_id IS NOT NULL)
-            ORDER BY rrf_score DESC
-            LIMIT ?;
-        """;
+                    WITH vector_search AS (
+                        SELECT parent_id, 
+                               ROW_NUMBER() OVER (ORDER BY embedding <=> ?::vector) as rank
+                        FROM child_vectors
+                        WHERE tenant_id = ?
+                        LIMIT 20
+                    ),
+                    keyword_search AS (
+                        SELECT parent_id,
+                               ROW_NUMBER() OVER (ORDER BY ts_rank_cd(to_tsvector('english', content), plainto_tsquery('english', ?)) DESC) as rank
+                        FROM child_vectors
+                        WHERE tenant_id = ? AND to_tsvector('english', content) @@ plainto_tsquery('english', ?)
+                        LIMIT 20
+                    )
+                    SELECT p.content,
+                           COALESCE(1.0 / (60 + v.rank), 0.0) + COALESCE(1.0 / (60 + k.rank), 0.0) as rrf_score
+                    FROM parent_documents p
+                    LEFT JOIN vector_search v ON p.id = v.parent_id
+                    LEFT JOIN keyword_search k ON p.id = k.parent_id
+                    WHERE p.tenant_id = ? AND (v.parent_id IS NOT NULL OR k.parent_id IS NOT NULL)
+                    ORDER BY rrf_score DESC
+                    LIMIT ?;
+                """;
 
         List<String> results = new ArrayList<>();
 

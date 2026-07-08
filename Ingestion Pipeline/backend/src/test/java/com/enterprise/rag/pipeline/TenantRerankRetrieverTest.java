@@ -1,10 +1,8 @@
 package com.enterprise.rag.pipeline;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -20,14 +18,8 @@ public class TenantRerankRetrieverTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Value("${google.gemini.api-key}")
-    private String geminiApiKey;
-
-    @Value("${google.gemini.ai-model}")
-    private String aiModel;
-
-    @Value("${google.gemini.ai-dim}")
-    private int aiDim;
+    @Autowired
+    private EmbeddingModel model;
 
     @Test
     public void testHybridSearchWithGoogleGemini() {
@@ -38,13 +30,6 @@ public class TenantRerankRetrieverTest {
         // 插入一筆 HR 相關的知識庫（屬於租戶: tenant-a）
         jdbcTemplate.execute("INSERT INTO parent_documents(id, tenant_id, content) VALUES (1, 'tenant-a', 'The company provides 15 days of annual paid leave for all full-time software engineers.');");
 
-
-        // 為了方便測試，這裡直接抓取環境變數，或是你也可以手動填入你的 Gemini Key String
-        EmbeddingModel model = GoogleAiEmbeddingModel.builder()
-                .apiKey(geminiApiKey)
-                .modelName(aiModel)
-                .outputDimensionality(aiDim)
-                .build();
 
         String childText = "15 days of annual paid leave for software engineers";
         float[] fakeVector = model.embed(childText).content().vector();
