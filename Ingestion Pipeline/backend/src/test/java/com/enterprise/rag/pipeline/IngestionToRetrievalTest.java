@@ -52,7 +52,7 @@ public class IngestionToRetrievalTest {
         System.out.println("====== [開始 End-to-End 檢索測試] ======");
         String userQuery = "What vacation benefits do developers have?";
 
-        List<String> matchedContents = retriever.retrieveParentContent("tenant-a", userQuery, 1);
+        List<String> matchedContents = retriever.retrieveParentContent("tenant-a", userQuery, 1, 0.5);
 
         System.out.println("檢索命中內容：");
         for (String content : matchedContents) {
@@ -63,4 +63,27 @@ public class IngestionToRetrievalTest {
         assertThat(matchedContents).isNotEmpty();
         assertThat(matchedContents.get(0)).contains("15 days of annual paid leave");
     }
+
+
+    @Test
+    public void testThresholdFilteringWithNonsenseQuery() {
+        // 1. 確保資料庫有剛才塞進去的軟體工程師福利資料 (這筆資料在 tenant-a 下)
+        // 假設上一筆測試的 Ingestion 已經跑過，資料庫已有資料
+
+        System.out.println("====== [開始測試：動態語意相似度門檻過濾] ======");
+
+        // 2. 模擬一個跟 HR 知識庫完全不相干的 query
+        String nonsenseQuery = "What is the best recipe for making Italian pepperoni pizza?";
+
+        // 3. 呼叫進階檢索方法，傳入嚴格的餘弦距離門檻 0.4 (pgvector 距離越小越相似)
+        // 如果距離大於 0.4 代表不相似，應該會被 SQL 直接過濾掉
+        List<String> results = retriever.retrieveParentContent("tenant-a", nonsenseQuery,
+                3, 0.4);
+
+        System.out.println("不相干問題檢索到的結果數量 (預期為 0): " + results.size());
+
+        // 4. 斷言驗證：因為是披薩食譜，知識庫完全不該命中任何 HR 福利，結果必須為空！
+        assertThat(results).isEmpty();
+    }
+
 }

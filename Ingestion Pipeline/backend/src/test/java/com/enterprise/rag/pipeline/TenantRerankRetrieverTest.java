@@ -51,7 +51,7 @@ public class TenantRerankRetrieverTest {
         String userQuery = "How many days of paid vacation do developers get?";
 
         // 呼叫你的核心 RRF 檢索方法（尋找租戶 tenant-a 的資料）
-        List<String> results = retriever.retrieveParentContent("tenant-a", userQuery, 3);
+        List<String> results = retriever.retrieveParentContent("tenant-a", userQuery, 3, 0.5);
 
         System.out.println("檢索到的結果數量: " + results.size());
         for (String doc : results) {
@@ -60,7 +60,7 @@ public class TenantRerankRetrieverTest {
 
         // ---- 3. 驗證多租戶隔離（用 tenant-b 去撈，應該要什麼都撈不到） ----
         System.out.println("====== [測試多租戶安全隔離] ======");
-        List<String> emptyResults = retriever.retrieveParentContent("tenant-b", userQuery, 3);
+        List<String> emptyResults = retriever.retrieveParentContent("tenant-b", userQuery, 3, 0.5);
         System.out.println("租戶 tenant-b 檢索到的結果數量 (預期為 0): " + emptyResults.size());
     }
 }

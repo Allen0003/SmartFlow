@@ -21,11 +21,10 @@ public class TenantRerankRetriever {
     @Autowired
     private EmbeddingModel embeddingModel;
 
-
     /**
      * 核心檢索方法：結合向量檢索與全文檢索 (Hybrid Search)，並嚴格限制租戶
      */
-    public List<String> retrieveParentContent(String tenantId, String query, int maxResults) {
+    public List<String> retrieveParentContent(String tenantId, String query, int maxResults, double distanceThreshold) {
         // 1. 將用戶 Query 轉為向量
         Embedding queryEmbedding = embeddingModel.embed(query).content();
         float[] vectorArray = queryEmbedding.vector();
@@ -38,6 +37,7 @@ public class TenantRerankRetriever {
                                ROW_NUMBER() OVER (ORDER BY embedding <=> ?::vector) as rank
                         FROM child_vectors
                         WHERE tenant_id = ?
+                        AND (embedding <=> ?::vector) < ?  -- 餘弦距離大於門檻的直接拋棄，不參與 RRF
                         LIMIT 20
                     ),
                     keyword_search AS (
@@ -65,11 +65,14 @@ public class TenantRerankRetriever {
             // 綁定參數 (防範 SQL 注入，同時確保多租戶安全隔離)
             stmt.setObject(1, vectorArray);
             stmt.setString(2, tenantId);
-            stmt.setString(3, query);
-            stmt.setString(4, tenantId);
+            stmt.setObject(3, vectorArray);
+            stmt.setDouble(4, distanceThreshold);
             stmt.setString(5, query);
             stmt.setString(6, tenantId);
-            stmt.setInt(7, maxResults);
+            stmt.setString(7, query);
+
+            stmt.setString(8, tenantId);        // 最外層 p.tenant_id
+            stmt.setInt(9, maxResults);         // LIMIT ?
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
